@@ -10,9 +10,8 @@
  *****************************************************************************/
 /**
  * @file <stats.c> 
- * @brief <Add Brief Description Here >
- *
- * <Add Extended Description Here>
+ * @brief <This Program is designed to analyze the data set presented to us. >
+ *@Extended Description< >
  *
  * @author <Add FirsName LastName>
  * @date <May 1st 2020>
