@@ -11,10 +11,10 @@
 /**
  * @file <stats.c> 
  * @brief <This Program is designed to analyze the data set presented to us. >
- *@Extended Description< >
+ *@Extended Description< Sort the data, then find mean, median of the data set. Find the minimum and maximum value in the data set>
  *
- * @author <Add FirsName LastName>
- * @date <May 1st 2020>
+ * @author < Anoorag Sunkari>
+ * @date <05/02/2020>
  *
  */
 #include <stdio.h>
