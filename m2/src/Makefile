@@ -48,15 +48,14 @@ CFLAGS = -Wall\
 		-Werror\
 		-g\
 		-O0\
-		-std=c99
-include sources.mk		
+		-std=c99		
 ifeq ($(PLATFORM),HOST)
   #Host specific flags
   CC = gcc
   CPPFLAGS =$(INCLUDES) -DHOST
   SIZETOOL=size
   LD= 
-else
+else ifeq($(PLATFORM),MSP432)
   #msp specific flags
   SIZETOOL=arm-none-eabi-size
   SOURCES:=$(SOURCES)\
@@ -74,6 +73,8 @@ else
 		 --specs=$(SPECS)\
 		 -mfloat-abi=hard\
 		 -mfpu=fpv4-sp-d16
+else
+	
 endif
 
 OBJS:=$(SOURCES:.c=.o) 
@@ -108,4 +109,4 @@ $(OBJS):$(SOURCES)
 #remove all compiled objs, prepocessor outputs, asm outputs, exe files, build output files
 .PHONY: clean
 clean:
-	rm -f $(TARGET) *.map *.i *.o *.out *.asm
+	rm -f $(TARGET) *.map *.i *.o *.out *.asm *.d
