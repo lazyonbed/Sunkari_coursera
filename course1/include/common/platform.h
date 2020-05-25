@@ -7,7 +7,10 @@
  * software. Alex Fosdick and the University of Colorado are not liable for any
  * misuse of this material. 
  *
+ *Author- Anoorag Sunkari
+ * Date:   May 23rd, 2020
  *****************************************************************************/
+
 #ifndef __PLATFORM_H__
 #define __PLATFORM_H__
 

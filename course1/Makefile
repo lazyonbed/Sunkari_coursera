@@ -10,7 +10,7 @@
 #*****************************************************************************
 
 #------------------------------------------------------------------------------
-# <This is a Make file to support to two build platforms>
+# Simple make file to support two build platforms
 #
 # Use: make [TARGET] [PLATFORM-OVERRIDES]
 #
@@ -23,90 +23,100 @@
 #      build - Builds all object files in project (links as well)
 #      clean - Removes all generated files
 #
-#
 # Platform Overrides:
 #      HOST - Default platform
 #      MSP342 - Target cross-compiled platform
 #
+# Author: vtotient
+# Date:   April 13, 2019
+#
 #------------------------------------------------------------------------------
 include sources.mk
 
-#Platform Overrides
 # Platform Overrides
 PLATFORM = HOST
-CPU=cortex-m4
-BASENAME=c1m2
-TARGET=$(BASENAME).out
-LDFLAGS = -Wl
-DEPENDFLAG =-MMD\
-			-MD\
-			-MF\
-			 
-			
-# Compiler Flags and Defines
-CFLAGS = -Wall\
-		-Werror\
-		-g\
-		-O0\
-		-std=c99		
-ifeq ($(PLATFORM),HOST)
-  #Host specific flags
-  CC = gcc
-  CPPFLAGS =$(INCLUDES) -DHOST
-  SIZETOOL=size
-  LD= 
-else ifeq($(PLATFORM),MSP432)
-  #msp specific flags
-  SIZETOOL=arm-none-eabi-size
-  SOURCES:=$(SOURCES)\
-		   startup_msp432p401r_gcc.c\
-		   system_msp432p401r.c\
-		   interrupts_msp432p401r_gcc.c
-  LD = -T 		   
-  LINKER_FILE = ../msp432p401r.lds
-  SPECS = nosys.specs
-  CC = arm-none-eabi-gcc
-  CPPFLAGS = $(MSP_INCLUDES) -DMSP432
-  ARCH = -mcpu=$(CPU)\
-		 -mthumb\
-		 -march=armv7e-m\
-		 --specs=$(SPECS)\
-		 -mfloat-abi=hard\
-		 -mfpu=fpv4-sp-d16
-else
-	
+VERBOSE = DISABLE
+COURSE = COURSE1
+
+# General flags for both platforms
+GEN_FLAGS = \
+	    -Wall \
+	    -Werror \
+	    -g \
+	    -O0 \
+	    -std=c99
+
+TARGET = c1m2
+
+ifeq ($(VERBOSE), ENABLE)
+	CPPFLAGS += -DVERBOSE
 endif
 
-OBJS:=$(SOURCES:.c=.o) 
+ifeq ($(COURSE), COURSE1)
+	CPPFLAGS += -DCOURSE1
+endif
 
-#compile all object files and link into final executable
-.PHONY: build
-build: $(TARGET)
-$(TARGET):$(SOURCES)
-	@echo "Building TARGET "$(TARGET)" with the following pre requisites "$(SOURCES)
-# generate the target executable
-	$(CC) $(DEPENDFLAG) $*.d $(CFLAGS) $(ARCH) $(CPPFLAGS) $(LD) $(LINKER_FILE) -o $@ $^ -Wl,-Map=$*.map
-	$(SIZETOOL) $(TARGET)
+ifeq ($(PLATFORM), MSP432)
+	# Architectures Specific Flags
+	LINKER_FILE = -T msp432p401r.lds 
+	CPU = cortex-m4
+	ARCH = armv7e-m
+	SPECS = nosys.specs
+	EXTRA = -mthumb \
+		-mfloat-abi=hard \
+		-mfpu=fpv4-sp-d16
+
+	# Compiler Flags and Defines
+	CC = arm-none-eabi-gcc
+	LD = arm-none-eabi-ld
+	CFLAGS = $(GEN_FLAGS) $(EXTRA) -mcpu=$(CPU) -march=$(ARCH) --specs=$(SPECS)
+	LDFLAGS = -Wl,-Map=$(TARGET).map -T -L ../ $(LINKER_FILE)
+	CPPFLAGS = -DMSP432 $(INCLUDES)
+
+	# Architecture specific source codes
+	SRCS += \
+		 interrupts_msp432p401r_gcc.c \
+		 startup_msp432p401r_gcc.c \
+		 system_msp432p401r.c \
 	
+	SIZE = arm-none-eabi-size
+
+else
+	# Complier Flags and Defines
+	CC = gcc
+	CFLAGS = $(GEN_FLAGS)
+	CPPFLAGS = -DHOST $(INCLUDES)
+	LDFLAGS = -Wl,-Map=$(TARGET).map
+	SIZE = size
+endif
+
+OBJS = $(SRCS:.c=.o)
+DEPS = $(SRCS:.c=.d)
+ASMS = $(SRCS:.c=.asm)
+PREP = $(SRCS:.c=.i)
+
+%.o: %.c
+	$(CC) -c $< $(CFLAGS) $(CPPFLAGS) -o $@
+
+%.asm: %.c
+	$(CC) -S $< $(CFLAGS) $(CPPFLAGS) -o $@
+
+%.i: %.c
+	$(CC) -E $< $(CPPFLAGS) -o $@
+
+%.d: %.c
+	$(CC) -E -M $< $(CPPFLAGS) -o $@
+
 .PHONY: compile-all
 compile-all: $(OBJS)
-$(OBJS):$(SOURCES)
-	$(CC) $(CFLAGS) $(ARCH) $(CPPFLAGS) -c $^
-	
-%.o:%.c
-	@echo "Compiling into objects"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $^ 
 
-%.i:%.c
-	@echo "Generating preproccesor file for "$(PLATFORM)
-	$(CC) $(CPPFLAGS) -E -o $@ $^
+.PHONY: Build
+build: $(TARGET).out
 
-# use an implicit chain rule to generate the .o file
-%.asm:%.o
-	@echo "Dumping assembley"
-	objdump -S $^ > $@
-	
-#remove all compiled objs, prepocessor outputs, asm outputs, exe files, build output files
-.PHONY: clean
+$(TARGET).out: $(OBJS)
+	$(CC) $(OBJS) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@
+	$(SIZE) $@
+
+.PHONY: Clean
 clean:
-	rm -f $(TARGET) *.map *.i *.o *.out *.asm *.d
+	rm -f $(OBJS) $(DEPS) $(ASMS) $(PREP) $(TARGET).out $(TARGET).map 
